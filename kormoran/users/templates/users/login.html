@@ -1,0 +1,19 @@
+{% extends 'authentication.html' %}
+
+{% block title %}
+Login
+{% endblock %}
+
+{% block header %}
+<a href="{% url 'panel:home-view' %}">Home</a>
+<a href="{% url 'users:register-view' %}">Register Here</a>
+{% endblock  %}
+
+{% block content %}
+<form method="POST">
+    {% csrf_token %} 
+        
+        {{ auth_form.as_p}}
+        <input type="submit" value="Login">
+    </form>
+{% endblock %}
