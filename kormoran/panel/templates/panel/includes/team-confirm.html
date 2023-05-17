@@ -1,0 +1,5 @@
+<li>
+    {{team.temp_name}} {{team.temp_sport}} 
+    <a href="{% url 'panel:confirm-single-view' team.temp_id 'add' %}"><button>Add</button></a>
+    <a href="{% url 'panel:confirm-single-view' team.temp_id 'remove' %}"><button>Remove</button> </a>   
+</li>

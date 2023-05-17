@@ -1,0 +1,23 @@
+{% extends 'index.html' %}
+
+{% block title %}
+All tournaments
+{% endblock %}
+{% block header %}
+<a href="{% url 'panel:home-view' %}">Home</a>
+{% endblock %}
+
+{% block content %}
+
+<div>
+    {%for tournament  in tournament_list %}
+    <div>
+        <a href="{% url 'panel:tournament-matches-view' tournament.tournament_id %}">Mecze</a>
+        <div>
+            Tournament data
+            {{tournament}}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

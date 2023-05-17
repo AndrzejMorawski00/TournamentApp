@@ -1,0 +1,19 @@
+{% extends 'index.html' %}
+
+{% block title %}
+Manage Match
+{% endblock %}
+
+{% block header %}
+<a href="{{request.META.HTTP_REFERER|escape}}">Back</a>
+{% endblock %}
+
+{% block content %}
+<form action="" method="POST">
+    {% csrf_token %}
+    {{match_form}}
+    <input type="submit" name="finish" value="Finish match">
+    <input type="submit" name="cancel" value="Cancel match">
+    <input type="submit" name="save" value="Save match">
+</form>
+{% endblock %}

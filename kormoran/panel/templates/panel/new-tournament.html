@@ -1,0 +1,16 @@
+{% extends 'index.html' %}
+
+{% block title %}
+Create New Tournament
+{% endblock %}
+{% block header %}
+<a href="{% url 'panel:home-view' %}">Home</a>
+{% endblock %}
+
+{% block content %}
+<form method="POST">
+    {% csrf_token %}
+    {{tournament_form.as_p}}
+    <input type="submit" value="Create Tournament">
+</form>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends 'index.html' %}
+
+{% block title %}
+Add New Team
+{% endblock %}
+{% block header %}
+<a href="{% url 'panel:home-view' %}">Home</a>
+{% endblock %}
+
+{% block content %}
+<form method="POST">
+    {% csrf_token %}
+    {{team_form.as_p}}
+    <input type="submit" value="Add Team">
+</form>
+{% endblock %}

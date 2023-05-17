@@ -1,0 +1,16 @@
+{% extends 'index.html' %}
+
+{% block title %}
+Confirm Team
+{% endblock %}
+{% block header %}
+<a href="{% url 'panel:home-view' %}">Home</a>
+{% endblock %}
+
+{% block content %}
+<ul class="teams">
+    {% for team in team_list %}
+       {% include 'panel/includes/team-confirm.html'%}
+    {% endfor %}
+</ul>
+{% endblock %}

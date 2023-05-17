@@ -1,0 +1,28 @@
+{% extends 'index.html' %} {% block title %} Confirm Team {% endblock %} {% block header %}
+<a href="{% url 'panel:home-view' %}">Home</a>
+
+{% endblock %} {% block content %} {% for tournament, teams in result_dict.items %}
+<form action="" method="POST">
+    {% csrf_token %}
+    <div class="">
+        Tournament Data {{tournament}}
+        <a href="{% url 'panel:set-groups-view' tournament.tournament_id %}">Set Groups</a>
+        <a href="{% url 'panel:add-tournament-teams-view' tournament.tournament_id%}">Add Teams</a>
+    </div>
+
+    <ul>
+        <li>Team:</li>
+        {% for team in teams %}
+        <li>
+            {{team}}
+            <a href="{% url 'panel:remove-tournament-team-view' tournament.tournament_id team.team_id %}">Remove Team</a>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <input type="hidden" name="data" value="{{tournament.tournament_id}}" />
+    <input type="submit" name="confirm" value="Confirm Tournament" />
+    <input type="submit" name="delete" value="Delete Tournament" />
+</form>
+
+{% endfor %} {% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'index.html' %}
+
+{% block title %}
+My matches
+{% endblock %}
+
+{% block header %}
+<a href="{{request.META.HTTP_REFERER|escape}}">Back</a>
+{% endblock %}
+
+{% block content %}
+    {% for match in match_list %}
+    <div>
+        {{match}}
+        {% if match.match_status == "completed" %}
+        {% else %}
+        <a href="{% url "panel:manage-match-view" match.match_id %}">Manage Match</a>
+        {% endif%}
+    </div>
+    {% endfor%}
+
+{% endblock %}

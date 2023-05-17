@@ -1,0 +1,31 @@
+{% extends 'index.html' %}
+
+{% block title %}
+Tournament Matches
+{% endblock %}
+
+{% block header %}
+<a href="{% url 'panel:home-view'%}">Home</a>
+<a href="{% url 'panel:tournament-list-view'%}">Back</a>
+{% endblock %}
+
+{% block content %}
+<div>
+    {% for match in  match_list %}
+
+    <div>
+        <p>
+            Match Data - status result itd...
+        </p>
+        {{ match }}
+
+        {% if access and match.match.user == None %}
+        <a href="{% url 'panel:manage-match-view' match.match_id %}">Start Match</a>
+        {% endif %}
+    </div>
+    
+
+
+    {% endfor %}
+</div>
+{% endblock %}

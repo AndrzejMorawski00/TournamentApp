@@ -1,0 +1,25 @@
+{% extends 'index.html' %}
+
+{% block title %}
+Confirm Team
+{% endblock %}
+{% block header %}
+<a href="{% url 'panel:home-view' %}">Home</a>
+{% endblock %}
+
+{% block content %}
+
+<div>
+    <p>Tournament Data</p>
+</div>
+<form action="" method="POST">
+    {% csrf_token %}
+    {% for team in team_list %}
+        <div>
+            {{team}}
+            <input type="checkbox" name="checked_{{team.team_id}}" id="checked_{{team.team_id}}">
+        </div>
+    {% endfor %}
+    <input type="submit" value="Add Teams">
+</form>
+{% endblock %}
