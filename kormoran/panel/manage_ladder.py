@@ -96,21 +96,12 @@ def generate_matches(team_list, tournament: Tournament):
         manage_tournament.generate_match(team_1, team_2, tournament)
 
 
-# Tu jest jakiś błąd podczas wybierania meczy
+
 def generate_eliminations_matches(ladder_size, teams, tournament: Tournament):
-    print("ELIMINATIONS")
     matches_left = len(teams) - ladder_size
     selected_teams = teams[0: 2 * matches_left]
     generate_matches(selected_teams, tournament)
-    # while (teams_to_select):
-    #     random_teams = list(TournamentTeam.objects.filter(
-    #         Q(tournament=tournament) & Q(selected=True)).exclude(ladder_choice=-1))
-    # shuffle(random_teams)
-    # team = random_teams[0]
-    # team.ladder_choice = -1
-    # team.save()
-    # selected_teams.append(team)
-    # generate_matches(selected_teams, tournament)
+   
 
 
 def set_default_position(tournament: Tournament):
