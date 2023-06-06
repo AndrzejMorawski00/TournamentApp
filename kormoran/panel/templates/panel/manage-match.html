@@ -5,6 +5,7 @@ Manage Match
 {% endblock %}
 
 {% block header %}
+<a href="{% url 'panel:home-view'%}">Home</a>
 <a href="{{request.META.HTTP_REFERER|escape}}">Back</a>
 {% endblock %}
 

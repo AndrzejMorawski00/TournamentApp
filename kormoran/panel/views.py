@@ -6,16 +6,22 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Q
 
+from django.http import HttpRequest
+
 from .decorators import user_authenticated, user_not_authenticated, group_based_access
 from .models import TempTeam, Sport, Team, Tournament, TournamentTeam, TournamentMatch, Match
 from .forms import SportForm, TempTeamForm, TournamentForm, MatchForm
 
-from . import manage_tournament
+from . import manage_tournament, manage_groups, manage_ladder
 from . import finish_match
 
 # Main view
+
+
 def index(request):
-    return render(request, "panel/home.html", {})
+    referee = True if request.user.groups.filter(name__in=['referee']).exists() else False
+    it = True if request.user.groups.filter(name__in=['it']).exists() else False
+    return render(request, "panel/home.html", {"referee" : referee , "it" : it})
 
 
 # View to add new temp teams
@@ -41,19 +47,7 @@ def add_team(request):
 
 @group_based_access(groups=['it'])
 def confirm_team(request):
-    if request.method == "POST":
-
-        # True ->  dodać False -> usunać
-        op = False if request.POST.get('remove') else True
-        print(request.POST)
-        if op is True:
-            pass
-        else:
-            pass
-        return redirect("panel:confirm-team-view")
-
     team_list = list(TempTeam.objects.all())
-
     return render(request, "panel/confirm-team.html", {"team_list": team_list})
 
 # View that confirms/deletes teams
@@ -146,68 +140,57 @@ def add_tournament_teams(request, tournament_id):
             result_teams.append(team)
 
     if len(result_teams) == 0:
-        return redirect("panel:confirm-tournament-view")
+        return redirect("panel:manage-tournament-view")
 
     if request.method == "POST":
         for team in result_teams:
             if request.POST.get(f"checked_{team.team_id}"):
                 new_team = TournamentTeam(team=team, tournament=tournament)
+                new_team.selected = True
                 new_team.save()
         return redirect("panel:add-tournament-teams-view", tournament_id=tournament_id)
 
     return render(request, "panel/add-tournament-teams.html", {"team_list": result_teams})
 
 
-# View to confirm created tournament
+# View to manage created tournament
 
 @group_based_access(groups=['it'])
-def confirm_tournaments(request):
+def manage_tournaments(request):
     if request.method == "POST":
         tournament_id = request.POST['data']
         remove = True if request.POST.get('delete') else False
         confirm = True if request.POST.get('confirm') else False
-
+     
         tournament = Tournament.objects.get(tournament_id=tournament_id)
 
         if confirm:
-            if "Group" in tournament.tournament_type:
-                tournament.tournament_status = Tournament.TournamentStatus.GROUP
-            else:
-                tournament.tournament_status = Tournament.TournamentStatus.LADDER
-            tournament.save()
-
-            messages.success(request, "Tournament Added Successfully")
+            manage_tournament.change_tournament_status(tournament)
 
         if remove:
             tournament.delete()
             messages.error(request, "Tournament Removed Successfully")
 
-    tournament_list = Tournament.objects.filter(tournament_status="pending")
+    tournament_list = list(Tournament.objects.all())
     result_dict = {}
     link_dict = {}
     for tournament in tournament_list:
         teams = list(TournamentTeam.objects.filter(tournament=tournament))
-        result_dict[tournament] = teams
-    return render(request, "panel/confirm-tournaments.html", {"result_dict": result_dict, "link_dict": link_dict})
+        link_data = manage_tournament.return_tournament_link(tournament)
+
+        result_dict[(tournament, link_data)] = teams
+    return render(request, "panel/manage-tournaments.html", {"result_dict": result_dict, "link_dict": link_dict})
 
 
 # remove Team from tournament
 
 @group_based_access(groups=['it'])
 def remove_team(request, tournament_id, team_id):
-    print(team_id)
     team = TournamentTeam.objects.filter(
         Q(team=team_id) & Q(tournament=tournament_id))
     team.delete()
     messages.success(request, "Team was removed successfully")
-    return redirect("panel:confirm-tournament-view")
-
-
-# Set Tournament Groups
-@group_based_access(groups=['it'])
-def set_groups(request, tournament_id):
-    manage_tournament.generate_tournament(tournament_id)
-    return redirect("panel:confirm-tournament-view")
+    return redirect("panel:manage-tournament-view")
 
 # View every tournament - every user
 
@@ -220,7 +203,11 @@ def view_tournaments(request):
 
 # View tournament matches - every user + RABC for manage matches
 
-def view_matches(request, tournament_id):
+def view_matches(request: HttpRequest, tournament_id):
+    if request.method == "POST":
+        if request.POST.get('match-id'):
+            return redirect("panel:manage-match-view", match_id=request.POST.get('match-id'))
+
     match_list = TournamentMatch.objects.filter(tournament_id=tournament_id)
     return render(request, "panel/tournament-matches.html", {"match_list": match_list, "access": request.user.groups.filter(name__in=['referee']).exists()})
 
@@ -229,8 +216,9 @@ def view_matches(request, tournament_id):
 
 @group_based_access(groups=['referee'])
 def manage_match(request, match_id):
+    match = Match.objects.get(pk=match_id)
+    match_data = list(TournamentMatch.objects.filter(match=match))[0]
 
-    match_data = TournamentMatch.objects.get(match_id=match_id)
     if match_data.match.match_status == Match.MatchStatus.PENDING:
         match_data.match.match_status = Match.MatchStatus.DURING
         match_data.match.user = request.user
@@ -240,19 +228,19 @@ def manage_match(request, match_id):
         if request.POST.get('finish'):
             team_1_result = request.POST['team_1_result']
             team_2_result = request.POST['team_2_result']
-            finish_match.calcualte_match_data(match_data, team_1_result, team_2_result)
-            #    return redirect("panel:tournament-list-view")
-            #else:
-            #    messages.error(request, "Error occured during saving match data")
+            finish_match.calcualte_match_data(
+                match_data, int(team_1_result), int(team_2_result))
+            return redirect("panel:tournament-list-view")
 
-        if request.POST.get('cancel'):
+        elif request.POST.get('cancel'):
             match_data.match.team_1_result = 0
             match_data.match.team_2_result = 0
             match_data.match.match_status = Match.MatchStatus.PENDING
             match_data.match.user = None
             match_data.match.save()
             return redirect("panel:tournament-list-view")
-        if request.POST.get('save'):
+        elif request.POST.get('save'):
+
             match_form = MatchForm(request.POST or None)
             if match_form.is_valid():
                 match_data.match.team_1_result = request.POST['team_1_result']
@@ -263,11 +251,10 @@ def manage_match(request, match_id):
                 for error in match_form.errors:
                     messages.error(request, error)
 
-    else:
-        pass
-    
+        else:
+            messages.error(request, "Error occured during saving match data")
+
     match_form = MatchForm(instance=match_data.match)
-        
 
     return render(request, "panel/manage-match.html", {"match_form": match_form})
 
@@ -275,6 +262,88 @@ def manage_match(request, match_id):
 # View to see matches assigned to a referee profile
 @group_based_access(groups=['referee'])
 def my_matches(request):
-    match_list = Match.objects.filter(user = request.user)
-    print(match_list)
-    return render(request, "panel/my-matches.html", {"match_list" : match_list})
+    match_list = Match.objects.filter(user=request.user)
+
+    return render(request, "panel/my-matches.html", {"match_list": match_list})
+
+
+@group_based_access(groups=['it'])
+def tournament_actions(request: HttpRequest, redirect_link, tournament_id):
+    return redirect(f"panel:{redirect_link}", tournament_id=tournament_id)
+
+# Set Tournament Groups
+# Zrobić to tak, żeby można było pod to samo podpiać darbinkę + wyświetalnanie defaultowych
+
+
+@group_based_access(groups=['it'])
+def set_groups(request, tournament_id):
+    tournament = Tournament.objects.get(tournament_id=tournament_id)
+    team_list = TournamentTeam.objects.filter(Q(tournament = tournament))
+    
+    if request.method == "POST":
+        teams_to_assign = {}
+        for object in request.POST:
+            if "select_" in str(object):
+                team_id = str(object).split("_")[1]
+                value = request.POST.get(object)
+                if value != "r":
+                    value = int(value)
+                teams_to_assign[team_id] = value
+
+        manage_groups.assign_groups(tournament_id, teams_to_assign)
+        manage_groups.assign_teams_to_groups(
+            Tournament.objects.get(tournament_id=tournament_id))
+        return redirect("panel:manage-tournament-view")
+    team_list = TournamentTeam.objects.filter(tournament=tournament)
+
+    return render(request, "panel/set-groups.html", {"team_list": team_list, "group_counter": range(1, manage_groups.generate_group_number(tournament.tournament_type) + 1)})
+
+
+@group_based_access(groups=['it'])
+def set_ladder(request: HttpRequest, tournament_id):
+    tournament = Tournament.objects.get(tournament_id=tournament_id)
+    team_positions = manage_ladder.generate_ladder_size(tournament)
+    if len(list(TournamentTeam.objects.filter(Q(tournament=tournament) & Q(selected=True)))) > team_positions:
+        team_positions *= 2
+    if request.method == "POST":
+        teams_to_assign = {}
+        for object in request.POST:
+            if "select_" in str(object):
+                team_id = str(object).split("_")[1]
+                value = int(request.POST.get(object))
+                if value != 0:
+                    teams_to_assign[team_id] = value
+
+        manage_ladder.assign_ladder_teams(teams_to_assign, tournament)
+
+    if tournament.tournament_type == Tournament.TournamentType.LADDER:
+        team_list = TournamentTeam.objects.filter(tournament=tournament)
+    else:
+
+        team_list = TournamentTeam.objects.filter(
+            Q(tournament=tournament) & Q(selected=True))
+
+    return render(request, "panel/set-ladder.html", {"team_list": team_list, "team_positions":  team_positions})
+
+
+@group_based_access(groups=['it'])
+def choose_teams(request: HttpRequest, tournament_id):
+    tournament = Tournament.objects.get(tournament_id=tournament_id)
+    if request.method == "POST":
+        team_list = TournamentTeam.objects.filter(Q(tournament=tournament_id))
+        for object in request.POST:
+            if "checked_" in object:
+                team_id = str(object).split("_")[1]
+                team = TournamentTeam.objects.get(
+                    Q(team=team_id) & Q(tournament=tournament_id))
+                team.selected = True
+                team.save()
+
+    team_list = TournamentTeam.objects.filter(Q(tournament=tournament))
+    groups = list(team_list.order_by('-group_choice'))[0].group_choice
+
+    group_dict = {}
+    for group in range(1, groups + 1):
+        group_dict[group] = list(team_list.filter(
+            Q(group_choice=group)).order_by("-team_points", "-points_balance"))
+    return render(request, "panel/choose-teams.html", {"group_dict": group_dict})

@@ -1,0 +1,30 @@
+{% extends 'index.html' %}
+
+{% block title %}
+Set Groups
+{% endblock %}
+{% block header %}
+<a href="{% url 'panel:home-view' %}">Home</a>
+<a href="{% url 'panel:manage-tournament-view' %}">Back</a>
+{% endblock %}
+
+{% block content %}
+<form method="POST">
+    {% csrf_token %}
+    {% for team in team_list %}
+    <div>
+        {{team}}
+        <p>Group Choice: </p>
+        
+        <select name="select_{{team.team_id}}" value="{{team.team_id}}">
+            <option value="r">Random</option>
+            {% for i in group_counter%}
+            <option value="{{i}}">{{i}}</option>
+            {%endfor%}
+        </select>
+    </div>
+    {% endfor %}
+    
+    <input type="submit" value="Assign Teams">
+</form>
+{% endblock %}

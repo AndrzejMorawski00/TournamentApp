@@ -1,5 +1,11 @@
 {% extends 'index.html' %}
 
+{% load static %}
+{% block styles %}
+<link rel="stylesheet" href="{% static 'base.css' %}">
+<link rel="stylesheet" href="{% static 'panel/home.css' %}">
+{% endblock  %}
+
 {% block title %}
 Add New Sport
 {% endblock %}

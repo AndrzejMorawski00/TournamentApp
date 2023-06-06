@@ -1,108 +1,11 @@
 from .models import Tournament, TournamentTeam, TournamentMatch, Match
+from django.db.models import Q
+
 from random import shuffle
-
-# Generate Groups
-
-
-def pairs(n):
-    return [[a, b] for a in range(n) for b in range(a, n) if a != b]
-
-
-def generate_tournament_type(form_data):
-    if form_data == "2":
-        return 
-    elif form_data == "3":
-        return 
-    elif form_data == "4":
-        return 
-    elif form_data == "5":
-        return 
-    else:
-        return 
-
-def generate_group_number(tournament_string):
-    
-    if tournament_string == "2gr+ldr":
-        return 2
-    elif tournament_string == "3gr+ldr":
-        return 3
-    elif tournament_string == "4gr+ldr":
-        return 4
-    
-    return 1
-    
-
-def print_groups(groups):
-
-    counter_1 = 1
-    for group in groups:
-        print("Group: ", counter_1)
-        counter_1 += 1
-        counter_2 = 1
-        for team in group:
-            print("Pos:", counter_2, ".", team)
-            counter_2 += 1
-
-
-def assign_teams(teams,  tournament):
-    group_number = generate_group_number(tournament.tournament_type)
-    if group_number == 0:
-        group_number = 1 # Temp
-    group_size = int(round(len(teams) / group_number))
-    last_group_size = len(teams) - (group_number - 1) * group_size
-    groups = [[] for _ in range(group_number)]
-
-    for i in range(1, group_number + 1):
-        chosen_teams = list(teams.filter(group=i))
-        shuffle(chosen_teams)
-        if i != group_number:
-            selected_teams = chosen_teams[0:group_size]
-        else:
-            selected_teams = chosen_teams[0:last_group_size]
-        for team in selected_teams:
-            team.selected = True
-            team.save()
-        groups[i - 1] = list(selected_teams)
-
-    for i in range(1, group_number + 1):
-        rest_of_teams = list(teams.filter(selected=False))
-        shuffle(rest_of_teams)
-        if i != group_number:
-            places_left = group_size - len(groups[i - 1])
-        else:
-            places_left = last_group_size - len(groups[i - 1])
-        selected_teams = rest_of_teams[0:places_left]
-
-        for team in selected_teams:
-            print(team)
-            groups[i - 1].append(team)
-            team.selected = True
-            team.save()
-
-    save_groups(groups)
-    print_groups(groups)
-    return groups
-
-
-def set_false(teams):
-    for team in teams:
-        team.selected = False
-        team.save()
-
-
-def save_groups(groups):
-    for i in range(len(groups)):  # Iterate for groups
-        for j in range(len(groups[i])):  # Iterate in single group
-            groups[i][j].group = i + 1
-            groups[i][j].save()
-
-
-def reset_groups(teams):
-    for team in teams:
-        team.group = 0
-        team.save()
-
-# Generate Matches in groups:
+import math
+from . import manage_groups
+from . import manage_ladder
+# General functions
 
 
 def generate_match(team_1, team_2, tournament):
@@ -113,30 +16,118 @@ def generate_match(team_1, team_2, tournament):
         match=new_match, tournament=tournament)
     tournament_match.save()
 
-
-def generate_matches(groups, tournament):
-    print("Generate Matches")
-    for group in groups:
-        list_of_pairs = pairs(len(group))
-        for p in list_of_pairs:
-            generate_match(group[p[0]], group[p[1]], tournament)
+# Do przepisania
 
 
-def generate_tournament(tournament_id):
+def manage_tournament(tournament_id):
     tournament = Tournament.objects.get(tournament_id=tournament_id)
+    if tournament.tournament_status == Tournament.TournamentStatus.GROUP_PENDING:
+        teams = TournamentTeam.objects.filter(Q(tournament = tournament) & Q(selected = True))
+        if len(list(teams)):
+            manage_groups.generate_group_matches(tournament)
+    elif tournament.tournament_status == Tournament.TournamentStatus.LADDER_PENDING:
+        teams = TournamentTeam.objects.filter(Q(tournament = tournament) & Q(selected = True))
+        if len(list(teams)):
+            manage_ladder.generate_ladder_matches(tournament)
 
-    teams = TournamentTeam.objects.filter(
-        tournament=tournament).order_by('-group')
-    set_false(teams)
-    reset_groups(teams)
-    if tournament.tournament_type != "Ladder":
-        groups = assign_teams(teams, tournament)
-        generate_matches(groups, tournament)
+    change_tournament_status(tournament)
+
+    # teams = TournamentTeam.objects.filter(
+    #     tournament=tournament).order_by('-group_choice')
+    # # set_false(teams)
+    # # reset_groups(teams)
+    # manage_tournament.generate_ladder_matches(tournament)
+    # # if tournament.tournament_type == "Ladder":
+    # #     generate_ladder_matches()
+    # # else:
+    # #     groups = assign_teams_to_groups(teams, tournament)
+    # #     generate_group_matches(groups, tournament)
+
+
+
+def change_tournament_group_status(tournament: Tournament):
+    if tournament.tournament_status == Tournament.TournamentStatus.GROUP_PENDING:
+        manage_groups.generate_group_matches(tournament)
+        tournament.tournament_status = Tournament.TournamentStatus.GROUP
+
+    elif tournament.tournament_status == Tournament.TournamentStatus.GROUP:
+
+        if "ldr" in tournament.tournament_type:
+
+            tournament.tournament_status = Tournament.TournamentStatus.GROUP_FINISHED
+            set_selected_false(
+                list(TournamentTeam.objects.filter(tournament_id=tournament.tournament_id)))
+        else:
+
+            tournament.tournament_status = Tournament.TournamentStatus.COMPLETED
+    elif tournament.tournament_status == Tournament.TournamentStatus.GROUP_FINISHED:
+
+        tournament.tournament_status = Tournament.TournamentStatus.LADDER_PENDING
+        manage_ladder.generate_ladder_size(tournament)
+
+
+def change_tournament_ladder_status(tournament: Tournament):
+    if tournament.tournament_status == Tournament.TournamentStatus.LADDER_PENDING:
+        tournament.tournament_status = Tournament.TournamentStatus.LADDER
+        manage_ladder.generate_ladder_matches(tournament)
+
+    elif tournament.tournament_status == Tournament.TournamentStatus.LADDER:
+
+        tournament.tournament_status = Tournament.TournamentStatus.COMPLETED
+
+
+def change_tournament_status(tournament: Tournament):
+    if tournament.tournament_type == Tournament.TournamentType.GROUP1:
+
+        if tournament.tournament_status == Tournament.TournamentStatus.PENDING:
+
+            tournament.tournament_status = Tournament.TournamentStatus.GROUP_PENDING
+        else:
+
+            change_tournament_group_status(tournament)
+    elif "gr+ldr" in tournament.tournament_type:
+        if tournament.tournament_status == Tournament.TournamentStatus.PENDING:
+            tournament.tournament_status = Tournament.TournamentStatus.GROUP_PENDING
+        else:
+            change_tournament_ladder_status(tournament)
+            change_tournament_group_status(tournament)
+
+    elif "ldr" in tournament.tournament_type:
+        if tournament.tournament_status == Tournament.TournamentStatus.PENDING:
+            tournament.tournament_status = Tournament.TournamentStatus.LADDER_PENDING
+        else:
+            change_tournament_ladder_status(tournament)
+
+    tournament.save()
+
+
+def return_tournament_link(tournament: Tournament) -> tuple[str, str]:
+    if tournament.tournament_status == Tournament.TournamentStatus.PENDING:
+        return ("add-tournament-teams-view", "Add Teams")
+    elif tournament.tournament_status == Tournament.TournamentStatus.GROUP_PENDING:
+        return ("set-groups-view", "Set Groups")
+    elif tournament.tournament_status == Tournament.TournamentStatus.LADDER_PENDING:
+        return ("set-ladder-view", "Set Ladder")
+    elif tournament.tournament_status == Tournament.TournamentStatus.GROUP_FINISHED:
+        return ("choose-ladder-teams-view", "Choose Teams To Ladder")
+    elif tournament.tournament_status == Tournament.TournamentStatus.COMPLETED:
+        return ("", "Results")  # ToDo This link
     else:
-        pass  # Create Tournament
+        return ("", "Tournament in Progress")
 
 
-# Choose Operation:
+def update_match_left(tournament: Tournament, matches: int):
+    tournament.matches_left = matches
+    tournament.save()
 
-def choose_operation(tournament_id):
-    pass
+
+def set_selected_true(teams):
+    for team in teams:
+        team.selected = True
+        team.save()
+
+
+def set_selected_false(teams):
+    for team in teams:
+        team.selected = False
+        team.save()

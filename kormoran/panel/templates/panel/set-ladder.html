@@ -1,0 +1,30 @@
+{% extends 'index.html' %}
+
+{% block title %}
+Set Ladder
+{% endblock %}
+{% block header %}
+<a href="{% url 'panel:home-view' %}">Home</a>
+<a href="{% url 'panel:manage-tournament-view' %}">Back</a>
+{% endblock %}
+
+{% block content %}
+<form method="POST">
+    {% csrf_token %}
+    {% for team in team_list %}
+    <div>
+        {{team}}
+        <p>Ladder Position: </p>
+        <input type="number" name="select_{{team.team_id}}" {%if team.ladder_choice != 0%}
+        value={{team.ladder_choice}}
+        {%else %}
+        value=0
+        {% endif %}
+        min=0 max={{team_positions}}>
+        
+    </div>
+    {% endfor %}
+    
+    <input type="submit" value="Assign Teams">
+</form>
+{% endblock %}

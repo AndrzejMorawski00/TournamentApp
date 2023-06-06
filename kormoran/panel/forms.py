@@ -6,7 +6,7 @@ from .models import TempTeam, Sport, Tournament, Match
 class SportForm(ModelForm):
     class Meta:
         model = Sport
-        fields = ["sport_name", "sport_gender"]
+        fields = ["sport_name", "sport_gender", "points_win", "points_draw", "points_lost",]
 
 class TempTeamForm(ModelForm):
     class Meta:

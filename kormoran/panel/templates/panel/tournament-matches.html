@@ -12,20 +12,19 @@ Tournament Matches
 {% block content %}
 <div>
     {% for match in  match_list %}
-
-    <div>
-        <p>
-            Match Data - status result itd...
-        </p>
-        {{ match }}
-
-        {% if access and match.match.user == None %}
-        <a href="{% url 'panel:manage-match-view' match.match_id %}">Start Match</a>
-        {% endif %}
-    </div>
-    
-
-
+    <form action="" method="POST">
+        {% csrf_token %}
+        <div>
+            <p>
+                Match Data - status result itd...
+            </p>
+            {{ match }}
+            {% if access and match.match.user == None %}
+            <input type="hidden" name="match-id" value="{{match.match_id}}">
+            <input type="submit" value="Start Match">
+            {% endif %}
+        </div>
+    </form>
     {% endfor %}
 </div>
 {% endblock %}

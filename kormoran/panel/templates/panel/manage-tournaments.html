@@ -1,0 +1,47 @@
+{% extends 'index.html' %} 
+{% block title %} Manage Tournament {% endblock %}
+
+{% block header %}
+<a href="{% url 'panel:home-view' %}">Home</a>
+
+{% endblock %} 
+
+{% block content %} 
+{% for tournament, teams in result_dict.items %}
+<form action="" method="POST">
+    {% csrf_token %}
+    <div class="">
+        Tournament Data 
+    </br>
+        {{tournament.0}}
+    
+        {% if tournament.1.0 != ""%}
+        <a href="{% url 'panel:tournament-actions-view' tournament.1.0 tournament.0.tournament_id %}">{{tournament.1.1}}</a>
+        {% else %}
+        <p>{{tournament.1.1}}</p>
+        {%endif %}
+       
+    </div>
+
+    <ul>
+        <li>Team:</li>
+        {% for team in teams %}
+        <li>
+            {{team}}
+            {% if tournament.0.tournament_status == "pending"%}
+            <a href="{% url 'panel:remove-tournament-team-view' tournament.0.tournament_id team.team_id %}">Remove Team</a>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+
+    <input type="hidden" name="data" value="{{tournament.0.tournament_id}}" />
+    {% if "pending" in tournament.0.tournament_status or "finished" in tournament.0.tournament_status %} 
+    <input type="submit" name="confirm" value="Proceed"/>
+    {% endif %} 
+    {% if tournament.0.tournament_status == "pending"%}
+    <input type="submit" name="delete" value="Delete" />
+    {% endif %}
+</form>
+
+{% endfor %} {% endblock %}

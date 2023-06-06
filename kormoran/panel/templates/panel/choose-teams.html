@@ -1,0 +1,31 @@
+{% extends 'index.html' %}
+
+{% block title %}
+Choose Teams
+{% endblock %}
+
+{% block header %}
+<a href="{% url 'panel:home-view' %}">Home</a>
+<a href="{% url 'panel:manage-tournament-view' %}">Back</a>
+{% endblock %}
+
+{% block content %}
+<form action="" method="POST">
+    {% csrf_token %}
+    {% for group, teams in group_dict.items %}
+    <ul>
+        <p>Group nr. {{group}}</p>
+        {% for team in teams %}
+        <li>{{team}}</li>
+        <label for="checked_{{team.team_id}}">Select Team</label>
+        <input type="checkbox" name="checked_{{team.team_id}}" id="checked_{{team.team_id}}"
+        {%if team.selected %}
+        checked
+        {%endif %}>
+        {% endfor %}
+    </ul>
+    {% endfor %}
+
+    <input type="submit" value="Add Teams">
+</form> 
+{% endblock %}

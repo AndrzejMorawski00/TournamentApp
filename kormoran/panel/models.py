@@ -1,4 +1,3 @@
-from typing import Any
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -84,7 +83,8 @@ class Match(models.Model):
         DURING = "during"
 
     sport = models.ForeignKey(Sport, default="", on_delete=models.CASCADE)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.SET_NULL, null=True, blank=True)
     match_id = models.AutoField(primary_key=True)
     match_name = models.CharField(default="", max_length=100, blank=True)
     team_1 = models.ForeignKey(
@@ -110,7 +110,15 @@ class TournamentTeam(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     tournament = models.ForeignKey("Tournament", on_delete=models.CASCADE)
     selected = models.BooleanField(default=False)
-    group = models.IntegerField(default=0, validators=[
+    final_position = models.IntegerField(default=0, validators=[
+        MinValueValidator(-1),
+        MaxValueValidator(100),
+    ])
+    ladder_choice = models.IntegerField(default=0, validators=[
+        MinValueValidator(-1),
+        MaxValueValidator(256)
+    ])
+    group_choice = models.IntegerField(default=0, validators=[
         MinValueValidator(0),
         MaxValueValidator(4)
     ])
@@ -135,11 +143,15 @@ class TournamentTeam(models.Model):
 
     points_scored = models.IntegerField(default=0, validators=[
         MinValueValidator(0),
-        MaxValueValidator(200)])
+        MaxValueValidator(300)])
 
     points_lost = models.IntegerField(default=0, validators=[
         MinValueValidator(0),
-        MaxValueValidator(200)])
+        MaxValueValidator(300)])
+    points_balance = models.IntegerField(default=0, validators=[
+        MinValueValidator(-150),
+        MaxValueValidator(150)
+    ])
 
     def __str__(self) -> str:
         return f"{self.team} {self.tournament}"
@@ -155,10 +167,13 @@ class TournamentMatch(models.Model):
 
 class Tournament(models.Model):
     class TournamentStatus(models.TextChoices):
-        COMPLETED = "completed"
         PENDING = "pending"
+        GROUP_PENDING = "pending_group"
         GROUP = "group"
+        GROUP_FINISHED = "finished_group"
+        LADDER_PENDING = "pending_ladder"
         LADDER = "ladder"
+        COMPLETED = "completed"
 
     class TournamentType(models.TextChoices):
         GROUP1 = "1gr", "1 Group"
@@ -167,13 +182,15 @@ class Tournament(models.Model):
         GROUP4 = "4gr+ldr", "4 Groups + Ladder"
         LADDER = "ldr", "Ladder"
 
+    matches_left = models.IntegerField(default=0, validators=[
+        MinValueValidator(0)
+    ])
     tournament_id = models.AutoField(primary_key=True)
     tournament_sport = models.ForeignKey(
         Sport, default="", on_delete=models.CASCADE)
     tournament_name = models.CharField(max_length=100, unique=True)
     tournament_status = models.CharField(
-        max_length=10, choices=TournamentStatus.choices, default=TournamentStatus.PENDING)
-
+        max_length=20, choices=TournamentStatus.choices, default=TournamentStatus.PENDING)
     tournament_type = models.CharField(
         max_length=100, choices=TournamentType.choices, default=TournamentType.GROUP1)
 
