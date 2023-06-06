@@ -1,0 +1,95 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.header {
+    margin: 2rem 0;
+    display: flex;
+    justify-content: center;
+}
+
+.header__link {
+    padding: 1rem;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 2.5rem;
+    transition: 0.2s;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+}
+
+.form__label {
+    font-size: 2.7rem;
+    margin: 1.5rem;
+    color: #0a0f20;
+}
+
+.form__input {
+    font-size: 2.7rem;
+    background-color: #cce8ef;
+    padding: 0.4rem 1.1rem;
+}
+
+
+.from__submit {
+    margin-top: 1.2rem;
+    font-size: 2.3rem;
+    padding: 0.4rem 1.1rem;
+}
+
+.messages {
+    list-style: none;
+}
+
+.messages__message {
+    font-size: 2.3rem;
+}
+@media (min-width: 375px) {
+    * {
+        font-size: 10px;
+    }
+}
+
+
+@media (min-width: 420px) {
+    * {
+        font-size: 11px;
+    }
+}
+
+
+@media (min-width: 520px) {
+    * {
+        font-size: 13px;
+    }
+}
+
+
+@media (min-width: 620px) {
+    * {
+        font-size: 15px;
+    }
+}
+
+
+@media (min-width: 720px) {
+    * {
+        font-size: 16px;
+    }
+}
+
+@media (min-width: 1000px) {
+    * {
+        font-size: 18px;
+    }
+}

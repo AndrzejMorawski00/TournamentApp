@@ -1,19 +1,32 @@
 {% extends 'authentication.html' %}
-
+{% load static %}
+{% block styles %}
+<link rel="stylesheet" href="{% static 'base.css' %}">
+<link rel="stylesheet" href="{% static 'users/auth.css' %}">
+{% endblock  %}
 {% block title %}
 Login
 {% endblock %}
 
 {% block header %}
-<a href="{% url 'panel:home-view' %}">Home</a>
-<a href="{% url 'users:register-view' %}">Register Here</a>
+<a class="header__link" href="{% url 'panel:home-view' %}">Home</a>
+<a class="header__link" href="{% url 'users:register-view' %}">Register Here</a>
 {% endblock  %}
 
 {% block content %}
-<form method="POST">
+{% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="messages__message"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+<form class="form" method="POST">
     {% csrf_token %} 
-        
-        {{ auth_form.as_p}}
-        <input type="submit" value="Login">
+        <label class="form__label" for="form__username">Username or Email</label>
+        {{auth_form.username}}
+        <label class="form__label" for="form__username">Password</label>
+        {{auth_form.password}}
+        <input class="from__submit" type="submit" value="Login">
     </form>
 {% endblock %}

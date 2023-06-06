@@ -17,7 +17,7 @@ def register_user(request):
             user = registration_form.save(commit=False)
             user.save()
             messages.success(
-                request, "Your account have been created successfully. Please register now")
+                request, "Your account have been created successfully. Please login now")
             return redirect("users:login-view")
         else:
             for error in list(registration_form.errors.values()):
@@ -41,7 +41,6 @@ def login_user(request):
                 return redirect("panel:home-view")
         else:
             for error in list(auth_form.errors.values()):
-                print(error)
                 messages.error(request, error)
 
     else:

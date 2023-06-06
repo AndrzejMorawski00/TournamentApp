@@ -1,16 +1,38 @@
 {% extends 'authentication.html' %}
-
+{% load static %}
+{% block styles %}
+<link rel="stylesheet" href="{% static 'base.css' %}">
+<link rel="stylesheet" href="{% static 'users/auth.css' %}">
+{% endblock  %}
 {% block title %}Register{% endblock %} 
 
 {% block header %}
-    <a href="{% url 'panel:home-view' %}">Home</a>
-    <a href="{% url 'users:login-view' %}">Login Here</a>
+    <a class="header__link" href="{% url 'panel:home-view' %}">Home</a>
+    <a class="header__link" href="{% url 'users:login-view' %}">Login Here</a>
 {% endblock %} 
 
 {% block content %}
-    <form method="POST">
-        {% csrf_token %} 
-        {{ registration_form.as_p}}
-        <input type="submit" value="Register">
-    </form>
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="messages__message"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+<form class="form" method="POST">
+    {% csrf_token %}        
+    <label class="form__label" for="first_name">First Name: </label>
+    {{registration_form.first_name}}
+    <label class="form__label" for="last_name">Last Name: </label>
+    {{registration_form.last_name}}
+    <label class="form__label" for="username">Username: </label>
+    {{registration_form.username}}
+    <label class="form__label" for="email">Email: </label>
+    {{registration_form.email}}
+    <label class="form__label" for="password1">Password: </label>
+    {{registration_form.password1}}
+    <label class="form__label" for="password2">Repeat Password: </label>
+    {{registration_form.password2}}
+    <input class="from__submit" type="submit" value="Register">
+</form>
 {% endblock %}

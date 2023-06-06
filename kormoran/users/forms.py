@@ -19,12 +19,37 @@ class RegisterForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super(RegisterForm, self).__init__(*args, **kwargs)
-        self.fields["first_name"].label = "First Name:"
-        self.fields["last_name"].label = "Last Name:"
-        self.fields["username"].label = "Username:"
-        self.fields["email"].label = "Email:"
-        self.fields["password1"].label = "Password:"
-        self.fields["password2"].label = "Repeat Password:"
+
+        self.fields["first_name"].widget.attrs.update({
+            'class': 'form__input',
+            'placeholder' : 'First Name',
+            'id' : 'first_name',
+        })
+        self.fields["last_name"].widget.attrs.update({
+            'class': 'form__input',
+            'placeholder' : 'Last Name',
+            'id' : 'last_name',
+        })
+        self.fields["username"].widget.attrs.update({
+            'class': 'form__input',
+            'placeholder' : 'Username',
+            'id' : 'username',
+        })
+        self.fields["email"].widget.attrs.update({
+            'class': 'form__input',
+            'placeholder' : 'Email',
+            'id' : 'email',
+        })
+        self.fields["password1"].widget.attrs.update({
+            'class': 'form__input',
+            'placeholder' : 'Password',
+            'id' : 'password1',
+        })
+        self.fields["password2"].widget.attrs.update({
+            'class': 'form__input',
+            'placeholder' : 'Repeat Password',
+            'id' : 'password2',
+        })
 
 
 class UserLoginForm(AuthenticationForm):
@@ -33,9 +58,9 @@ class UserLoginForm(AuthenticationForm):
         super(UserLoginForm, self).__init__(*args, **kwargs)
 
     username = forms.CharField(widget=forms.TextInput(
-        attrs={'class': 'form-control', 'placeholder': 'Username or Email'}),
+        attrs={'class': 'form__input', 'id': 'form__username', 'placeholder': 'Username or Email'}),
         label="Username or Email")
 
     password = forms.CharField(widget=forms.PasswordInput(
-        attrs={'class': 'form-control', 'placeholder': 'Password'}),
+        attrs={'class': 'form__input', 'id': 'form__password', 'placeholder': 'Password'}),
         label="Password")
